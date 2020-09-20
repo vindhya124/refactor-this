@@ -1,115 +1,154 @@
 ﻿using System;
-using System.Net;
+using System.Threading.Tasks;
 using System.Web.Http;
-using refactor_this.Models;
+using refactor_me.Models;
+using refactor_me.Models.DbModel;
+using refactor_me.Services.Interfaces;
+using refactor_me.Services;
 
-namespace refactor_this.Controllers
+namespace refactor_me.Controllers
 {
-    [RoutePrefix("products")]
     public class ProductsController : ApiController
     {
-        [Route]
+        private readonly IProductService _productService;
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="ProductsController"/> class.
+        /// </summary>
+        /// <param name="productService">The product service.</param>
+        public ProductsController(IProductService productService)
+        {
+            _productService = productService;
+        }
+
         [HttpGet]
-        public Products GetAll()
+        [Route("api/Products/GetAllProducts")]
+        public async Task<IHttpActionResult> GetAllProducts()
         {
-            return new Products();
+            var product = await _productService.GetAllProducts();
+            if (product != null)
+                return Ok(product);
+            return BadRequest();
         }
 
-        [Route]
         [HttpGet]
-        public Products SearchByName(string name)
+        [Route("api/Products/GetProductByName/{name}")]
+        public async Task<IHttpActionResult> GetProductByName(string name)
         {
-            return new Products(name);
-        }
-
-        [Route("{id}")]
-        [HttpGet]
-        public Product GetProduct(Guid id)
-        {
-            var product = new Product(id);
-            if (product.IsNew)
-                throw new HttpResponseException(HttpStatusCode.NotFound);
-
-            return product;
-        }
-
-        [Route]
-        [HttpPost]
-        public void Create(Product product)
-        {
-            product.Save();
-        }
-
-        [Route("{id}")]
-        [HttpPut]
-        public void Update(Guid id, Product product)
-        {
-            var orig = new Product(id)
+            if (!string.IsNullOrEmpty(name))
             {
-                Name = product.Name,
-                Description = product.Description,
-                Price = product.Price,
-                DeliveryPrice = product.DeliveryPrice
-            };
-
-            if (!orig.IsNew)
-                orig.Save();
+                var product = await _productService.GetProductsByName(name);
+                if (product != null)
+                    return Ok(product);
+            }
+            return BadRequest();
         }
 
-        [Route("{id}")]
-        [HttpDelete]
-        public void Delete(Guid id)
-        {
-            var product = new Product(id);
-            product.Delete();
-        }
-
-        [Route("{productId}/options")]
         [HttpGet]
-        public ProductOptions GetOptions(Guid productId)
+        [Route("api/Products/GetProduct/{id}")]
+        public async Task<IHttpActionResult> GetProductById(Guid id)
         {
-            return new ProductOptions(productId);
-        }
-
-        [Route("{productId}/options/{id}")]
-        [HttpGet]
-        public ProductOption GetOption(Guid productId, Guid id)
-        {
-            var option = new ProductOption(id);
-            if (option.IsNew)
-                throw new HttpResponseException(HttpStatusCode.NotFound);
-
-            return option;
-        }
-
-        [Route("{productId}/options")]
-        [HttpPost]
-        public void CreateOption(Guid productId, ProductOption option)
-        {
-            option.ProductId = productId;
-            option.Save();
-        }
-
-        [Route("{productId}/options/{id}")]
-        [HttpPut]
-        public void UpdateOption(Guid id, ProductOption option)
-        {
-            var orig = new ProductOption(id)
+            if (id != Guid.Empty)
             {
-                Name = option.Name,
-                Description = option.Description
-            };
-
-            if (!orig.IsNew)
-                orig.Save();
+                var product = await _productService.GetProductsById(id);
+                if (product != null)
+                    return Ok(product);
+            }
+            return BadRequest();
         }
 
-        [Route("{productId}/options/{id}")]
-        [HttpDelete]
-        public void DeleteOption(Guid id)
+        [HttpPost]
+        [Route("api/Products/Create")]
+        public async Task<IHttpActionResult> Create([FromBody]Product model)
         {
-            var opt = new ProductOption(id);
-            opt.Delete();
+            if (ModelState.IsValid)
+            {
+                var product = await _productService.CreateProduct(model);
+                if (product != null)
+                    return Ok(product);
+            }
+            return BadRequest();
+        }
+
+
+        [HttpPut]
+        [Route("api/Products/UpdateProduct/{id}")]
+        public async Task<IHttpActionResult> UpdateProduct(Guid id, [FromBody]Product model)
+        {
+            if (ModelState.IsValid)
+            {
+                var product = await _productService.UpdateProduct(id, model);
+                if (product != null)
+                    return Ok(product);
+            }
+
+            return BadRequest();
+        }
+
+        [HttpDelete]
+        [Route("api/Products/DeleteProduct/{id}")]
+        public async Task DeleteProduct(Guid id)
+        {
+            await _productService.DeleteProduct(id);
+        }
+
+        [HttpGet]
+        [Route("api/Products/GetProductOptionByProductId/{productId}")]
+        public async Task<IHttpActionResult> GetProductOptionByProductId(Guid productId)
+        {
+            if (productId != Guid.Empty)
+            {
+                var productOption = await _productService.GetProductOptionByProductId(productId);
+                if (productOption != null)
+                    return Ok(productOption);
+            }
+            return BadRequest();
+        }
+
+        [HttpGet]
+        [Route("api/Products/GetProductOption/{id}")]
+        public async Task<IHttpActionResult> GetProductOptionById(Guid id)
+        {
+            if (id != Guid.Empty)
+            {
+                var productOption = await _productService.GetProductOptionById(id);
+                if (productOption != null)
+                    return Ok(productOption);
+            }
+            return BadRequest();
+        }
+
+        [HttpPost]
+        [Route("api/Products/CreateProductOption/{productId}")]
+        public async Task<IHttpActionResult> CreateProductOption(Guid productId, [FromBody]ProductOption model)
+        {
+            if (ModelState.IsValid)
+            {
+                var productOption = await _productService.CreateProductOption(productId, model);
+                if (productOption != null)
+                    return Ok(productOption);
+            }
+            return BadRequest();
+        }
+
+        [HttpPut]
+        [Route("api/Products/UpdateProductOption/{id}")]
+        public async Task<IHttpActionResult> UpdateProductOption(Guid id, [FromBody]ProductOption model)
+        {
+            if (ModelState.IsValid)
+            {
+                var productOption = await _productService.UpdateProductOption(id, model);
+                if (productOption != null)
+                    return Ok(productOption);
+            }
+            return BadRequest();
+        }
+
+        [HttpDelete]
+        [Route("api/Products/DeleteProductOption/{id}")]
+        public async Task DeleteProductOption(Guid id)
+        {
+            await _productService.DeleteProductOption(id);
         }
     }
 }

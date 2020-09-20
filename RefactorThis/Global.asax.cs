@@ -1,4 +1,5 @@
-﻿using System;
+﻿using refactor_me.App_Start;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Web;
@@ -11,6 +12,7 @@ namespace refactor_this
     {
         protected void Application_Start()
         {
+            IocConfig.Configure();
             GlobalConfiguration.Configure(WebApiConfig.Register);
         }
     }
